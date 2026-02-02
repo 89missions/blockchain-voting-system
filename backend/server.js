@@ -10,6 +10,7 @@ Dbconnection()
 app.use(express.json())
 
 app.use('/register',require('./routes/register'))
+app.use('/login',require('./routes/login'))
 
 mongoose.connection.once('open',()=>{
     console.log('connected to mongodb')
