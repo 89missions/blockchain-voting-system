@@ -36,6 +36,7 @@ const handleLogin = async (req,res)=>{
         //saved the refresh token in the database
         foundUser.refreshToken = hashedRefreshToken
         const result = await foundUser.save()
+        console.log(result)
 
         //sending the refresh and access token to the user in a cookie.
        res.cookie('jwt',refreshToken,{httpOnly:true,maxAge: 2 * 24 * 60 * 60 * 1000})
