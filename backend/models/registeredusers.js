@@ -3,8 +3,9 @@ const {Schema} = mongoose
 
 const registereduserschema = new Schema({
     id:Number,
-    voterName:String,
+    userName:String,
     password:String,
+    role:String,
     refreshToken:String
 })
 

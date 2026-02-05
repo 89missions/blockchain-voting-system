@@ -18,12 +18,12 @@ const handleLogin = async (req,res)=>{
         const compare = await bcrypt.compare(password,foundUser.password)
         if(compare){
            const accessToken = jwt.sign(
-                {"userInfo":{id:foundUser.id}},
+                {"userInfo":{id:foundUser.id,role:foundUser.role}},
                 process.env.ACCESS_TOKEN_SECRET,
                 {expiresIn:"15m"}
             )
             const refreshToken = jwt.sign(
-                {id:foundUser.id},
+                {id:foundUser.id,role:foundUser.role},
                 process.env.REFRESH_TOKEN_SECRET,
                 {expiresIn:"2d"}
             )

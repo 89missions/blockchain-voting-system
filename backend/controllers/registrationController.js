@@ -1,42 +1,62 @@
 const registeredusers = require('../models/registeredusers')
 const eligiblevoters = require('../models/eligiblevoters')
+const admins = require('../models/admins')
 const bcrypt = require('bcrypt')
 
-const handleRegistration = async (req,res)=>{
+const handleRegistration = async (req, res) => {
     try {
-    const {id,voterName,password} = req.body
+        const roles = ["admin", "voter"]
+        const { id, userName, password } = req.body
 
-    //checks to see if the req.body came with the required parameters
-    if(!id || !voterName || !password){
-       return res.status(400).json({"message":"Missing valuable credential"})
-    }
+        if (!id || !userName || !password) {
+            return res.status(400).json({ "message": "Missing valuable credential" })
+        }
 
-    //check to see if users are eligible... will crosscheck from the eligiblevoters collection...
-    const eligibleVoter = await eligiblevoters.findOne({id:id}).exec()
-    if(!eligibleVoter){
-       return res.status(403).json({"Message":"not eligible to vote"})
-    }
+        const existingUser = await registeredusers.findOne({ id: id })
+        if (existingUser) {
+            return res.status(409).json({ "message": "User already exists" })
+        }
 
-    //check to see if user does not already exist.
-    const existingUser = await registeredusers.findOne({id:id})
-    if(existingUser){
-       return res.status(409).json({"message":"user already existss"})
-    }
-    
-        const hashedPassword = await bcrypt.hash(password,10)
+        const isAdmin = await admins.findOne({ id: id })
+
+        if (isAdmin) {
+            const hashedPassword = await bcrypt.hash(password, 10)
+            await registeredusers.create({
+                "id": id,
+                "userName": userName,
+                "role": roles[0],
+                "password": hashedPassword
+            })
+            
+            return res.status(201).json({
+                "message": "Admin registered successfully",
+                "role": "admin"
+            })
+        }
+
+        const eligibleVoter = await eligiblevoters.findOne({ id: id })
+        
+        if (!eligibleVoter) {
+            return res.status(403).json({ "message": "Not eligible to vote" })
+        }
+
+        // Register as voter
+        const hashedPassword = await bcrypt.hash(password, 10)
         await registeredusers.create({
-            "id":id,
-            "voterName":voterName,
-            "password":hashedPassword
+            "id": id,
+            "userName": userName,
+            "role": roles[1],
+            "password": hashedPassword
         })
-        
-          return  res.status(201).json({
-            "message":"user created successfully"
+
+        return res.status(201).json({
+            "message": "Voter registered successfully",
+            "role": "voter"
         })
-        
+
     } catch (error) {
         console.log(error)
+        return res.status(500).json({ "message": "Server error" })
     }
-
 }
 module.exports = handleRegistration
