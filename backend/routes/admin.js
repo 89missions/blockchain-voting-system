@@ -3,11 +3,20 @@ const router = express.Router()
 const {
     createElection,
     addPosition,
-    addCandidate
+    addCandidate,
+    getElectionDetails,
+    getElections
 } = require('../controllers/adminController')
+const verifyJWT = require('../middlewares/verifyJWT')
+const allowedRole = require('../middlewares/allowedRole')
 
-router.post('/election', createElection)
-router.post('/position', addPosition)
-router.post('/candidate', addCandidate)
+router.use(verifyJWT)
+
+router.get('/election', allowedRole('admin'), getElections)
+router.post('/election', allowedRole('admin'), createElection)
+router.post('/position', allowedRole('admin'), addPosition)
+router.post('/candidate', allowedRole('admin'), addCandidate)
+
+router.get('/election/:electionId', allowedRole('admin'), getElectionDetails)
 
 module.exports = router

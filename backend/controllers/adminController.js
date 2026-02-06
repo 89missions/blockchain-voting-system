@@ -2,66 +2,68 @@ const elections = require('../models/elections')
 const positions = require('../models/positions')
 const candidates = require('../models/candidates')
 
+// 1. Create a New Election
 const createElection = async (req, res) => {
-    const { title, description, startDate, endDate } = req.body
-    
-    if (!title || !startDate || !endDate) {
-        return res.status(400).json({ message: "Missing required fields" })
-    }
-    
     try {
-        const election = await elections.create({
+        const { title, description, startDate, endDate } = req.body
+        
+        if (!title || !startDate || !endDate) {
+            return res.status(400).json({ message: "Missing required fields" })
+        }
+
+        const newElection = await elections.create({
             title,
             description,
             startDate,
-            endDate
+            endDate,
+            createdBy: req.id
         })
         
         res.status(201).json({
             message: "Election created",
-            electionId: election._id,
-            election
+            election: newElection
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ message: "Server error" })
     }
 }
 
+// 2. Add a Position
 const addPosition = async (req, res) => {
-    const { name, electionId, order } = req.body
-    
-    if (!name || !electionId) {
-        return res.status(400).json({ message: "Missing required fields" })
-    }
-    
     try {
-        const position = await positions.create({
+        const { name, electionId, order } = req.body
+        
+        if (!name || !electionId) {
+            return res.status(400).json({ message: "Missing required fields" })
+        }
+
+        const newPosition = await positions.create({
             name,
             electionId,
-            order
+            order: order || 0
         })
         
         res.status(201).json({
             message: "Position added",
-            positionId: position._id,
-            position
+            position: newPosition
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ message: "Server error" })
     }
 }
 
+// 3. Add a Candidate
 const addCandidate = async (req, res) => {
-    const { name, photo, bio, positionId, electionId } = req.body
-    
-    if (!name || !positionId || !electionId) {
-        return res.status(400).json({ message: "Missing required fields" })
-    }
-    
     try {
-        const candidate = await candidates.create({
+        const { name, photo, bio, positionId, electionId } = req.body
+        
+        if (!name || !positionId || !electionId) {
+            return res.status(400).json({ message: "Missing required fields" })
+        }
+
+        const newCandidate = await candidates.create({
             name,
             photo,
             bio,
@@ -71,47 +73,54 @@ const addCandidate = async (req, res) => {
         
         res.status(201).json({
             message: "Candidate added",
-            candidate
+            candidate: newCandidate
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ message: "Server error" })
     }
 }
 
+// 4. Get All Active Elections
 const getElections = async (req, res) => {
     try {
-        const elections = await Election.find({ isActive: true })
-        res.status(200).json({ elections })
+        // We use 'list' here so we don't overwrite the 'elections' model
+        const list = await elections.find({ isActive: true })
+        res.status(200).json({ elections: list })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ message: "Server error" })
     }
 }
 
+// 5. Get Election Details (Positions + Candidates)
 const getElectionDetails = async (req, res) => {
-    const { electionId } = req.params
-    
     try {
-        const election = await Election.findById(electionId)
-        const positions = await Position.find({ electionId }).sort({ order: 1 })
+        const { electionId } = req.params
         
-        const positionsWithCandidates = await Promise.all(
-            positions.map(async (position) => {
-                const candidates = await Candidate.find({ positionId: position._id })
+        const foundElection = await elections.findById(electionId)
+        if (!foundElection) {
+            return res.status(404).json({ message: "Election not found" })
+        }
+
+        const foundPositions = await positions.find({ electionId }).sort({ order: 1 })
+        
+        const data = await Promise.all(
+            foundPositions.map(async (pos) => {
+                const candidateList = await candidates.find({ positionId: pos._id })
                 return {
-                    ...position.toObject(),
-                    candidates
+                    ...pos.toObject(),
+                    candidates: candidateList
                 }
             })
         )
         
         res.status(200).json({
-            election,
-            positions: positionsWithCandidates
+            election: foundElection,
+            positions: data
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ message: "Server error" })
     }
 }

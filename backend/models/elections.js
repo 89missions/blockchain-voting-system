@@ -6,7 +6,7 @@ const electionSchema = new mongoose.Schema({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     isActive: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+    createdBy: { type:String },
     createdAt: { type: Date, default: Date.now }
 })
 

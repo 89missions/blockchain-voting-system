@@ -1,18 +1,20 @@
-const JWT = require('jsonwebtoken')
+const jwt = require('jsonwebtoken')
 const handleVerification = (req,res,next)=>{
     //get the authorization headers
     const authHeader = req.headers.authorization || req.headers.Authorization
 
     //return unauthorized when there isnt any authorization header
-    if(!authHeader || authHeader.startsWith('Bearer')){
+    if(!authHeader || !authHeader.startsWith('Bearer ')){
         return res.status(401).json({"message":"not authorized"})
     }
 
+    console.log('it goes into the jwtverify middleware')
+
     //extract the token from the authorization header
-    const token = authHeader.split('')[1]
+    const token = authHeader.split(' ')[1]
 
     //verifying the token.
-    JWT.verify(token,process.env.ACCESS_TOKEN_SECRET,(error,decoded)=>{
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(error,decoded)=>{
         if(error){
             return res.sendStatus(401)
         }
