@@ -20,7 +20,7 @@ const createElection = async (req, res) => {
         
         res.status(201).json({
             message: "Election created",
-            election: newElection
+            electionId: newElection._id
         })
     } catch (error) {
         console.error(error)
@@ -43,7 +43,7 @@ const addPosition = async (req, res) => {
         
         res.status(201).json({
             message: "Position added",
-            position: newPosition
+            positionid: newPosition._id
         })
     } catch (error) {
         console.error(error)
