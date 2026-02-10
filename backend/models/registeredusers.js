@@ -6,6 +6,7 @@ const registereduserschema = new Schema({
     userName:String,
     password:String,
     role:String,
+    votedArray:[{type:Number}],
     refreshToken:String
 })
 
