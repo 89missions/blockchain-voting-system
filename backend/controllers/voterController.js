@@ -15,21 +15,52 @@ const getActiveElections = async(req,res)=>{
 const getCandidates = async(req,res)=>{
   try {
     const {electionId} = req.params
-    const allPositions = await positions.find({electionId:electionId}) //this is to find all the positions right?
+    const allPositions = await positions.find({electionId:electionId})
     const allPositionsArray = allPositions.map((position)=>{
-     return position._id //first step done..
+     return position._id
     })
-    const allCandidates = await candidates.find({positionId:{$in : allPositionsArray}}).select('-voteCount')//second step done...
+    const allCandidates = await candidates.find({positionId:{$in : allPositionsArray}}).select('-voteCount')
     return res.status(200).json({allPositions,allCandidates})
   } catch (error) {
   }
 }
 
 const postVote = async (req,res)=>{
-  /*first the validations will go on here,
-    1.has the voter already voted? will check the votedElectionArray in the voters document to see if it includes the id of the election which is currently being held.....the client is going to send the electionId,positionId,candidateId to know who he voted i will get the votersId from the jwt... 
+  /*running checks 
+  1. check if the user has already voted...
+  2. check if the postion is from a different election.. it might have been tampered with...
+  3. run the whole operation as an atomic property...
+
+  algorithm for the whole project.. the voting part charley..
+  when the fronted clicks on the candidate, the electionId,positionid and candidateId is captured..
+  when the user clicks on submit ballot button. it sends it to the post vote route..
+  [
+  
+    {
+      electionId: electionId,
+      positionId: positionId,
+      candidateId: candidateId
+  },
+  {
+      electionId: electionId,
+      positionId: positionId,
+      candidateId: candidateId
+  },
+  {
+      electionId: electionId,
+      positionId: positionId,
+      candidateId: candidateId
+  }
+  ]
+  sends it all as vote 
+  my plan is to get the candidateids and put them in an array,
+  then after i will look in the candidates collection and find ids
+
+  this part is where the atomicity starts
+  i will then increase the candidat's votecount by 1
+  and it ends here..
   */
- const {electionId,positionId,candidateId} = req.body
+ const {electionId,positionId,votes} = req.body
  const voter = await registeredusers.findById(req.id) //gets the user..
  if(!voter){
   return res.status(400).json({"message":"could not find user.."})
@@ -40,5 +71,16 @@ const postVote = async (req,res)=>{
  if(stringifiedVotedArray.includes(req.body.electionId)){
   return res.status(401).json({"message":"you have already voted in this election"})
  }
+
+ const checkPositionAuthenticity = await positions.findOne({electionId:electionId})
+ if(!checkPositionAuthenticity){
+  res.status(400).json({"message":"position does not belong to this election"})
+ }
+
+ //to get the individual candidate, i will map throught the votes array
+ const idofcan = votes.map((canId)=>canId.candidateId)
+
+ //find the candidates in the candidates collection..
+ //increase the vote counts... 
 }
 module.exports = {getActiveElections,getCandidates,postVote}
