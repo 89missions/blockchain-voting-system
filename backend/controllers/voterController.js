@@ -23,6 +23,7 @@ const getCandidates = async(req,res)=>{
     const allCandidates = await candidates.find({positionId:{$in : allPositionsArray}}).select('-voteCount')
     return res.status(200).json({allPositions,allCandidates})
   } catch (error) {
+    res.status(500).json({"message":"internal server error"})
   }
 }
 
@@ -63,9 +64,11 @@ const postVote = async (req,res)=>{
   await registeredusers.updateOne({_id:req.id},{$push:{votedArray: electionId}},{session})
 
   session.commitTransaction()
+
+  res.status(200).json({"message":"successfully voted"})
  } catch (error) {
   session.abortTransaction()
-  throw error
+  res.status(500).json({"message":"internal server error"})
  }
  finally{
   session.endSession()
