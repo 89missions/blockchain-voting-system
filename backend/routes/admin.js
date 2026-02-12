@@ -7,10 +7,8 @@ const {
     getElectionDetails,
     getElections
 } = require('../controllers/adminController')
-const verifyJWT = require('../middlewares/verifyJWT')
 const allowedRole = require('../middlewares/allowedRole')
 
-router.use(verifyJWT)
 
 router.get('/election', allowedRole('admin'), getElections)
 router.post('/election', allowedRole('admin'), createElection)

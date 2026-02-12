@@ -3,6 +3,7 @@ const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
 const Dbconnection = require('./Config/dbConfig')
+const verifyJWT = require('./middlewares/verifyJWT')
 const PORT = 3000
 
 Dbconnection()
@@ -11,8 +12,12 @@ app.use(express.json())
 
 app.use('/register',require('./routes/register'))
 app.use('/login',require('./routes/login'))
+
+app.use(verifyJWT)
+
 app.use('/admin',require('./routes/admin'))
 app.use('/voter',require('./routes/voter'))
+app.use('/results',require('./routes/voter'))
 
 mongoose.connection.once('open',()=>{
     console.log('connected to mongodb')
