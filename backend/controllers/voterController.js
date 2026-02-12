@@ -2,6 +2,7 @@ const candidates = require('../models/candidates')
 const elections = require('../models/elections')
 const positions = require('../models/positions')
 const registeredusers = require('../models/registeredusers')
+const mongoose = require('mongoose')
 
 const getActiveElections = async(req,res)=>{
     try {
@@ -26,45 +27,13 @@ const getCandidates = async(req,res)=>{
 }
 
 const postVote = async (req,res)=>{
-  /*running checks 
-  1. check if the user has already voted...
-  2. check if the postion is from a different election.. it might have been tampered with...
-  3. run the whole operation as an atomic property...
 
-  algorithm for the whole project.. the voting part charley..
-  when the fronted clicks on the candidate, the electionId,positionid and candidateId is captured..
-  when the user clicks on submit ballot button. it sends it to the post vote route..
-  [
-  
-    {
-      electionId: electionId,
-      positionId: positionId,
-      candidateId: candidateId
-  },
-  {
-      electionId: electionId,
-      positionId: positionId,
-      candidateId: candidateId
-  },
-  {
-      electionId: electionId,
-      positionId: positionId,
-      candidateId: candidateId
-  }
-  ]
-  sends it all as vote 
-  my plan is to get the candidateids and put them in an array,
-  then after i will look in the candidates collection and find ids
-
-  this part is where the atomicity starts
-  i will then increase the candidat's votecount by 1
-  and it ends here..
-  */
  const {electionId,positionId,votes} = req.body
  const voter = await registeredusers.findById(req.id) //gets the user..
  if(!voter){
   return res.status(400).json({"message":"could not find user.."})
  }
+
  const votedArray = voter.votedArray
  const stringifiedVotedArray = votedArray.map(election=>election.toString())
 
@@ -80,7 +49,27 @@ const postVote = async (req,res)=>{
  //to get the individual candidate, i will map throught the votes array
  const idofcan = votes.map((canId)=>canId.candidateId)
 
+ const session = await mongoose.startSession()
+
  //find the candidates in the candidates collection..
+ session.startTransaction()
+ try {
+  const update = await candidates.updateMany(
+    {_id: {$in : idofcan}}, //get the id for update
+    {$inc: {voteCount : 1}}, //function for update
+    {session}
+  )
+
+  await registeredusers.updateOne({_id:req.id},{$push:{votedArray: electionId}},{session})
+
+  session.commitTransaction()
+ } catch (error) {
+  session.abortTransaction()
+  throw error
+ }
+ finally{
+  session.endSession()
+ }
  //increase the vote counts... 
 }
 module.exports = {getActiveElections,getCandidates,postVote}
