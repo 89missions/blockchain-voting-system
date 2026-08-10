@@ -7,7 +7,8 @@ const electionSchema = new mongoose.Schema({
     endDate: { type: Date, required: true },
     isActive: { type: Boolean, default: true },
     createdBy: { type:String },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    contractAddress: {type:String}, 
 })
 
 module.exports = mongoose.model('elections', electionSchema)

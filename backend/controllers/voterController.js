@@ -27,52 +27,95 @@ const getCandidates = async(req,res)=>{
   }
 }
 
-const postVote = async (req,res)=>{
+const postVote = async (req, res) => {
+  const { electionId, positionId, votes } = req.body;
 
- const {electionId,positionId,votes} = req.body
- const voter = await registeredusers.findById(req.id) //gets the user..
- if(!voter){
-  return res.status(400).json({"message":"could not find user.."})
- }
+  // Validate request
+  if (!electionId || !votes || votes.length === 0) {
+      return res.status(400).json({
+          message: "Incomplete voting information"
+      });
+  }
 
- const votedArray = voter.votedArray
- const stringifiedVotedArray = votedArray.map(election=>election.toString())
+  // Find voter
+  const voter = await registeredusers.findById(req.id);
 
- if(stringifiedVotedArray.includes(req.body.electionId)){
-  return res.status(401).json({"message":"you have already voted in this election"})
- }
+  if (!voter) {
+      return res.status(404).json({
+          message: "User not found"
+      });
+  }
 
- const checkPositionAuthenticity = await positions.findOne({electionId:electionId})
- if(!checkPositionAuthenticity){
-  res.status(400).json({"message":"position does not belong to this election"})
- }
+  // Prevent duplicate voting
+  const hasVoted = voter.votedArray
+      .map(id => id.toString())
+      .includes(electionId);
 
- //to get the individual candidate, i will map throught the votes array
- const idofcan = votes.map((canId)=>canId.candidateId)
+  if (hasVoted) {
+      return res.status(400).json({
+          message: "You have already voted in this election"
+      });
+  }
 
- const session = await mongoose.startSession()
+  // Check election exists
+  const election = await elections.findById(electionId);
 
- //find the candidates in the candidates collection..
- session.startTransaction()
- try {
-  const update = await candidates.updateMany(
-    {_id: {$in : idofcan}}, //get the id for update
-    {$inc: {voteCount : 1}}, //function for update
-    {session}
-  )
+  if (!election) {
+      return res.status(404).json({
+          message: "Election not found"
+      });
+  }
 
-  await registeredusers.updateOne({_id:req.id},{$push:{votedArray: electionId}},{session})
+  // Verify submitted candidates belong to this election
+  const candidateIds = votes.map(v => v.candidateId);
 
-  session.commitTransaction()
+  const validCandidates = await candidates.find({
+      _id: { $in: candidateIds },
+      electionId
+  });
 
-  res.status(200).json({"message":"successfully voted"})
- } catch (error) {
-  session.abortTransaction()
-  res.status(500).json({"message":"internal server error"})
- }
- finally{
-  session.endSession()
- }
- //increase the vote counts... 
-}
+  if (validCandidates.length !== candidateIds.length) {
+      return res.status(400).json({
+          message: "One or more selected candidates are invalid"
+      });
+  }
+
+  // Blockchain integration will be inserted here
+
+  const session = await mongoose.startSession();
+
+  try {
+
+      session.startTransaction();
+
+      await registeredusers.updateOne(
+          { _id: req.id },
+          {
+              $push: {
+                  votedArray: electionId
+              }
+          },
+          { session }
+      );
+
+      await session.commitTransaction();
+
+      return res.status(200).json({
+          message: "Successfully voted"
+      });
+
+  } catch (err) {
+
+      await session.abortTransaction();
+
+      return res.status(500).json({
+          message: "Internal server error"
+      });
+
+  } finally {
+
+      session.endSession();
+
+  }
+};
 module.exports = {getActiveElections,getCandidates,postVote}
