@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-e388d90e01d48ba62d5925107d9b599f68f808aa",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.12.0"
+  },
+  "userSourceNameMap": {
+    "contracts/election.sol": "project/contracts/election.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/election.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.24;\r\n\r\ncontract Election {\r\n\r\n    // =========================\r\n    // STATE VARIABLES\r\n    // =========================\r\n\r\n    address public admin;\r\n\r\n    bool public votingOpen;\r\n\r\n    // voterHash => whether the voter has already voted\r\n    mapping(bytes32 => bool) private voted;\r\n\r\n    // candidateId => number of votes\r\n    mapping(bytes32 => uint256) private voteCounts;\r\n\r\n\r\n    // =========================\r\n    // EVENTS\r\n    // =========================\r\n\r\n    event ElectionStarted();\r\n\r\n    event ElectionEnded();\r\n\r\n    event VoteCast(\r\n        bytes32 indexed voterHash,\r\n        bytes32 indexed candidateId\r\n    );\r\n\r\n\r\n    // =========================\r\n    // CONSTRUCTOR\r\n    // =========================\r\n\r\n    constructor() {\r\n        admin = msg.sender;\r\n        votingOpen = false;\r\n    }\r\n\r\n\r\n    // =========================\r\n    // ACCESS CONTROL\r\n    // =========================\r\n\r\n    modifier onlyAdmin() {\r\n        require(msg.sender == admin, \"Not authorized\");\r\n        _;\r\n    }\r\n\r\n\r\n    // =========================\r\n    // ADMIN FUNCTIONS\r\n    // =========================\r\n\r\n    function startElection() external onlyAdmin {\r\n        require(!votingOpen, \"Election already open\");\r\n\r\n        votingOpen = true;\r\n\r\n        emit ElectionStarted();\r\n    }\r\n\r\n\r\n    function endElection() external onlyAdmin {\r\n        require(votingOpen, \"Election is not open\");\r\n\r\n        votingOpen = false;\r\n\r\n        emit ElectionEnded();\r\n    }\r\n\r\n\r\n    // =========================\r\n    // VOTING\r\n    // =========================\r\n\r\n    function vote(\r\n        bytes32 voterHash,\r\n        bytes32[] calldata candidateIds\r\n    ) external {\r\n\r\n        require(votingOpen, \"Voting is closed\");\r\n\r\n        require(!voted[voterHash], \"Already voted\");\r\n\r\n        require(candidateIds.length > 0, \"No candidates selected\");\r\n\r\n\r\n        // Increase vote count for every selected candidate\r\n        for (uint256 i = 0; i < candidateIds.length; i++) {\r\n\r\n            voteCounts[candidateIds[i]]++;\r\n\r\n            emit VoteCast(\r\n                voterHash,\r\n                candidateIds[i]\r\n            );\r\n        }\r\n\r\n\r\n        // Mark voter as having voted\r\n        voted[voterHash] = true;\r\n    }\r\n\r\n\r\n    // =========================\r\n    // READ FUNCTIONS\r\n    // =========================\r\n\r\n    function getVoteCount(\r\n        bytes32 candidateId\r\n    ) external view returns (uint256) {\r\n\r\n        return voteCounts[candidateId];\r\n    }\r\n\r\n\r\n    function hasVoted(\r\n        bytes32 voterHash\r\n    ) external view returns (bool) {\r\n\r\n        return voted[voterHash];\r\n    }\r\n}"
+      }
+    }
+  }
+}
