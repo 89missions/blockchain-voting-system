@@ -28,94 +28,106 @@ const getCandidates = async(req,res)=>{
 }
 
 const postVote = async (req, res) => {
-  const { electionId, positionId, votes } = req.body;
+    try {
+        const { electionId, positionId, votes } = req.body;
 
-  // Validate request
-  if (!electionId || !votes || votes.length === 0) {
-      return res.status(400).json({
-          message: "Incomplete voting information"
-      });
-  }
+        // Find the voter
+        const voter = await registeredusers.findById(req.id);
 
-  // Find voter
-  const voter = await registeredusers.findById(req.id);
+        if (!voter) {
+            return res.status(400).json({
+                message: "could not find user"
+            });
+        }
 
-  if (!voter) {
-      return res.status(404).json({
-          message: "User not found"
-      });
-  }
+        // Make sure votes were provided
+        if (!Array.isArray(votes) || votes.length === 0) {
+            return res.status(400).json({
+                message: "no votes provided"
+            });
+        }
 
-  // Prevent duplicate voting
-  const hasVoted = voter.votedArray
-      .map(id => id.toString())
-      .includes(electionId);
+        // Import ethers and blockchain contract
+        const { ethers } = await import("ethers");
 
-  if (hasVoted) {
-      return res.status(400).json({
-          message: "You have already voted in this election"
-      });
-  }
+        const { contractWithSigner } =
+            await import("../blockchain/services/electionservice.js");
 
-  // Check election exists
-  const election = await elections.findById(electionId);
+        // --------------------------------
+        // 1. Create voter hash
+        // --------------------------------
 
-  if (!election) {
-      return res.status(404).json({
-          message: "Election not found"
-      });
-  }
+        const voterHash = ethers.keccak256(
+            ethers.toUtf8Bytes(voter.id.toString())
+        );
 
-  // Verify submitted candidates belong to this election
-  const candidateIds = votes.map(v => v.candidateId);
+        // --------------------------------
+        // 2. Get candidate MongoDB IDs
+        // --------------------------------
 
-  const validCandidates = await candidates.find({
-      _id: { $in: candidateIds },
-      electionId
-  });
+        const candidateMongoIds = votes.map(
+            (vote) => vote.candidateId.toString()
+        );
 
-  if (validCandidates.length !== candidateIds.length) {
-      return res.status(400).json({
-          message: "One or more selected candidates are invalid"
-      });
-  }
+        // --------------------------------
+        // 3. Verify candidates and position belong
+        //    to this election
+        // --------------------------------
 
-  // Blockchain integration will be inserted here
+        const validCandidates = await candidates.find({
+            candidateId: { $in: candidateMongoIds },
+            electionId: electionId,
+            positionId: positionId
+        });
+        
+        if (validCandidates.length !== candidateMongoIds.length) {
+            return res.status(400).json({
+                message: "one or more candidates do not belong to this election or position"
+            });
+        }
 
-  const session = await mongoose.startSession();
+        // --------------------------------
+        // 4. Hash candidate IDs
+        // --------------------------------
 
-  try {
+        const candidateIds = candidateMongoIds.map(
+            (candidateId) =>
+                ethers.keccak256(
+                    ethers.toUtf8Bytes(candidateId)
+                )
+        );
 
-      session.startTransaction();
+        // --------------------------------
+        // 5. Send vote to blockchain
+        // --------------------------------
 
-      await registeredusers.updateOne(
-          { _id: req.id },
-          {
-              $push: {
-                  votedArray: electionId
-              }
-          },
-          { session }
-      );
+        const tx = await contractWithSigner.vote(
+            voterHash,
+            candidateIds
+        );
 
-      await session.commitTransaction();
+        // Wait for confirmation
+        await tx.wait();
 
-      return res.status(200).json({
-          message: "Successfully voted"
-      });
+        console.log("Vote recorded on blockchain");
+        console.log("Transaction hash:", tx.hash);
 
-  } catch (err) {
+        // --------------------------------
+        // 6. Respond to voter
+        // --------------------------------
 
-      await session.abortTransaction();
+        return res.status(200).json({
+            message: "successfully voted",
+            transactionHash: tx.hash
+        });
 
-      return res.status(500).json({
-          message: "Internal server error"
-      });
+    } catch (error) {
 
-  } finally {
+        console.error("Voting error:", error);
 
-      session.endSession();
-
-  }
+        return res.status(500).json({
+            message: "internal server error"
+        });
+    }
 };
 module.exports = {getActiveElections,getCandidates,postVote}
