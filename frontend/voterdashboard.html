@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voter dashboard — GCTU E-Voting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./css/voterdashboard.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="./voter.html" aria-label="GCTU E-Voting home">
+      <img src="./assets/logo.jpeg" alt="GCTU logo" />
+      <span class="wordmark">GCTU E-Voting</span>
+    </a>
+    <div class="top-actions">
+      <span class="link" id="whoami"></span>
+      <button class="btn ghost" id="logoutBtn" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="dash wrap">
+    <div class="student-card" id="studentCard"></div>
+
+    <h2 class="dash-h2">Active &amp; upcoming elections</h2>
+    <div id="activeList" class="election-list"></div>
+
+    <h2 class="dash-h2">Past elections</h2>
+    <div id="pastList" class="election-list"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <div class="fbrand">
+      <img src="./assets/logo.jpeg" alt="GCTU logo" />
+      <span>GCTU E-Voting</span>
+    </div>
+    <small>&copy; 2026 Ghana Communication Technology University</small>
+  </div>
+</footer>
+
+<!-- Election modal (ballot + results) -->
+<div class="modal-overlay" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBallot" type="button">Vote</button>
+      <button class="tab-btn" id="tabResults" type="button">Results</button>
+    </div>
+    <div class="modal-body">
+      <div id="ballotPane"></div>
+      <div id="resultsPane" hidden></div>
+    </div>
+  </div>
+</div>
+
+<script src="./js/config.js" type="module"></script>
+<script src="./js/voterdashboard.js" type="module"></script>
+</body>
+</html>

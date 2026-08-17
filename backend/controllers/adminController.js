@@ -1,6 +1,8 @@
 const elections = require('../models/elections')
 const positions = require('../models/positions')
 const candidates = require('../models/candidates')
+const { contractWithSigner } = require("../blockchain/services/electionservice")
+const mongoose = require('mongoose')
 
 const createElection = async (req, res) => {
     try {
@@ -60,6 +62,7 @@ const addCandidate = async (req, res) => {
         }
 
         const newCandidate = await candidates.create({
+            candidateId: new mongoose.Types.ObjectId(),
             name,
             photo,
             bio,
@@ -118,10 +121,40 @@ const getElectionDetails = async (req, res) => {
     }
 }
 
+const startElection = async (req, res) => {
+    try {
+
+        const { contractWithSigner } =
+            await import("../blockchain/services/electionservice.js")
+
+        const transaction =
+            await contractWithSigner.startElection()
+
+        const receipt =
+            await transaction.wait()
+
+        res.status(200).json({
+            message: "Election started",
+            transactionHash: receipt.hash
+        })
+
+    } catch (error) {
+
+        console.error("Start election error:", error)
+
+        res.status(500).json({
+            message: error.reason ||
+                error.shortMessage ||
+                "Failed to start election"
+        })
+    }
+}
+
 module.exports = {
     createElection,
     addPosition,
     addCandidate,
     getElections,
-    getElectionDetails
+    getElectionDetails,
+    startElection
 }

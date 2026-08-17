@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in — GCTU E-Voting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./css/voterdashboard.css" />
+</head>
+<body>
+<main class="auth">
+  <a class="auth-home" href="index.html">&larr; Back to home</a>
+  <div class="auth-card">
+    <img class="auth-logo" src="./assets/logo.jpeg" alt="GCTU logo" />
+    <h1>Welcome back</h1>
+    <p class="auth-sub">Sign in to cast your vote.</p>
+
+    <div class="auth-msg" id="msg"></div>
+
+    <form id="signinForm" novalidate>
+      <div class="field" id="f-id">
+        <label for="studentid">Input your Identification number</label>
+        <input type="text" id="studentid" name="studentid" placeholder="e.g. 0123456789" autocomplete="username" />
+        <span class="err">Please enter your student number.</span>
+      </div>
+      <div class="field" id="f-pass">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Your password" autocomplete="current-password" />
+        <span class="err">Please enter your password.</span>
+      </div>
+      <button class="btn gold full auth-btn" type="submit">Sign in</button>
+    </form>
+
+    <p class="auth-alt">New here? <a href="signup.html">Create an account</a></p>
+  </div>
+</main>
+<script src="./js/config.js" type="module"></script>
+<script src="./js/signin.js" type="module"></script>
+</body>
+</html>

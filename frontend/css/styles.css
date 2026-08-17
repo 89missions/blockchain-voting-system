@@ -1,0 +1,111 @@
+/* ============================================================
+   GCTU E-Voting — shared stylesheet
+   Used by: index.html, signin.html, signup.html
+   ============================================================ */
+
+:root {
+  --navy: #242460;
+  --navy-soft: #3B3B7A;
+  --gold: #D9A521;
+  --gold-bright: #EDB420;
+  --gold-deep: #A97F17;
+  --cream: #FBF8EC;
+  --ink: #232248;
+  --ink-soft: #4A4870;
+  --muted: #706E90;
+  --surface: #FFFFFF;
+  --green: #1E9160;
+  --danger: #C1362B;
+  --line: rgba(36, 36, 96, 0.12);
+  --line-strong: rgba(36, 36, 96, 0.20);
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --maxw: 1080px;
+  --r: 18px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--cream); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 26px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: var(--font-body); font-weight: 700; font-size: 15px;
+  padding: 12px 24px; border: none; border-radius: 999px;
+  background: var(--navy); color: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  transition: transform 0.14s, background 0.14s;
+}
+.btn:hover { transform: translateY(-2px); background: var(--navy-soft); }
+.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.btn.gold { background: linear-gradient(135deg, var(--gold-bright), var(--gold)); color: var(--navy); }
+.btn.gold:hover { background: var(--gold-bright); }
+.btn.ghost { background: transparent; color: var(--navy); border: 2px solid var(--line-strong); font-weight: 600; }
+.btn.ghost:hover { border-color: var(--navy); }
+.btn.full { width: 100%; }
+
+/* ---------- Header ---------- */
+header.topbar { border-bottom: 1px solid var(--line); background: var(--cream); }
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 46px; height: 46px; display: block; }
+.brand .wordmark { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--navy); }
+.top-actions { display: flex; align-items: center; gap: 18px; }
+.top-actions .link { font-weight: 600; font-size: 15px; color: var(--ink-soft); }
+.top-actions .link:hover { color: var(--gold-deep); }
+@media (max-width: 560px) { .brand .wordmark { font-size: 17px; } .top-actions { gap: 12px; } }
+
+/* ---------- Hero ---------- */
+.hero { text-align: center; padding: 86px 0 90px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(217,165,33,0.16); color: var(--gold-deep); font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 999px; margin-bottom: 24px; }
+.pill .d { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.hero h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(38px, 6vw, 62px); line-height: 1.05; letter-spacing: -0.025em; color: var(--navy); margin-bottom: 20px; }
+.hero h1 .u { color: var(--gold-deep); }
+.hero p { font-size: 19px; color: var(--ink-soft); max-width: 30em; margin: 0 auto 32px; }
+.hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.hero-alt { margin-top: 20px; font-size: 15px; color: var(--ink-soft); }
+.hero-alt a { color: var(--gold-deep); font-weight: 700; }
+
+/* ---------- Footer ---------- */
+.foot { background: var(--navy); color: rgba(255,255,255,0.75); padding: 30px 0; }
+.foot-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.foot .fbrand { display: flex; align-items: center; gap: 10px; }
+.foot .fbrand img { width: 34px; height: 34px; }
+.foot .fbrand span { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #fff; }
+.foot small { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+/* ---------- Auth pages (sign in / sign up) ---------- */
+.auth { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+.auth-home { align-self: center; font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 22px; display: inline-flex; align-items: center; gap: 6px; }
+.auth-home:hover { color: var(--navy); }
+.auth-card { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 30px 60px -34px rgba(36,36,96,0.5); padding: 36px 34px 32px; }
+.auth-logo { width: 60px; height: 60px; display: block; margin: 0 auto 18px; }
+.auth-card h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -0.02em; color: var(--navy); text-align: center; margin-bottom: 6px; }
+.auth-sub { text-align: center; color: var(--ink-soft); font-size: 15px; margin-bottom: 26px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+.field input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--line-strong); border-radius: 12px;
+  font-family: var(--font-body); font-size: 15px; color: var(--ink); background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field input::placeholder { color: #A9A7C0; }
+.field input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(36,36,96,0.12); }
+.field.invalid input { border-color: var(--danger); }
+.field .err { display: none; color: var(--danger); font-size: 12.5px; margin-top: 5px; font-weight: 500; }
+.field.invalid .err { display: block; }
+
+.auth-btn { margin-top: 8px; }
+.auth-msg { display: none; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 500; margin-bottom: 18px; }
+.auth-msg.show { display: block; }
+.auth-msg.ok { background: rgba(30,145,96,0.12); color: #147049; }
+.auth-msg.bad { background: rgba(193,54,43,0.10); color: var(--danger); }
+.auth-alt { text-align: center; font-size: 14.5px; color: var(--ink-soft); margin-top: 20px; }
+.auth-alt a { color: var(--gold-deep); font-weight: 700; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }

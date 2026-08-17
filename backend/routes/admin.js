@@ -5,7 +5,8 @@ const {
     addPosition,
     addCandidate,
     getElectionDetails,
-    getElections
+    getElections,
+    startElection
 } = require('../controllers/adminController')
 const allowedRole = require('../middlewares/allowedRole')
 
@@ -14,6 +15,7 @@ router.get('/election', allowedRole('admin'), getElections)
 router.post('/election', allowedRole('admin'), createElection)
 router.post('/position', allowedRole('admin'), addPosition)
 router.post('/candidate', allowedRole('admin'), addCandidate)
+router.post('/election/start',allowedRole('admin'),startElection)
 
 router.get('/election/:electionId', allowedRole('admin'), getElectionDetails)
 
