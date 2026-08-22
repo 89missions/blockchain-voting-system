@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | GCTU E-Voting</title>
+
+    <link rel="stylesheet" href="./css/admin.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo"><img src="./assets/logo.jpeg" alt="GCTU Logo"></div>
+
+            <div>
+                <h2>GCTU</h2>
+                <span>E-Voting</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+
+            <button class="nav-item active" data-section="dashboard">
+                <span>⌂</span>
+                Dashboard
+            </button>
+
+            <button class="nav-item" data-section="elections">
+                <span>▣</span>
+                Elections
+            </button>
+
+            <button class="nav-item" data-section="results">
+                <span>▤</span>
+                Results
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="admin-small">
+                <div class="admin-avatar" id="sidebarAvatar">A</div>
+
+                <div>
+                    <strong id="sidebarName">Admin</strong>
+                    <small>Administrator</small>
+                </div>
+            </div>
+
+            <button id="logoutBtn" class="logout-btn">
+                Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="main">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+                <p class="eyebrow">ADMINISTRATION</p>
+                <h1 id="pageTitle">Dashboard</h1>
+            </div>
+
+            <div class="top-user">
+                <span id="topUserId"></span>
+                <div class="top-avatar" id="topAvatar">A</div>
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             DASHBOARD SECTION
+        ================================================== -->
+
+        <section id="dashboardSection" class="section active">
+
+            <div class="welcome">
+
+                <div>
+                    <p class="eyebrow">OVERVIEW</p>
+                    <h2>Welcome back, Admin</h2>
+                    <p>
+                        Manage elections, positions, candidates and view
+                        live voting results.
+                    </p>
+                </div>
+
+                <button class="primary-btn" id="createElectionBtn">
+                    + Create Election
+                </button>
+
+            </div>
+
+
+            <!-- STAT CARDS -->
+
+            <div class="stats">
+
+                <div class="stat-card">
+                    <div class="stat-icon">E</div>
+
+                    <div>
+                        <span>Active Elections</span>
+                        <strong id="electionCount">0</strong>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">P</div>
+
+                    <div>
+                        <span>Positions</span>
+                        <strong id="positionCount">0</strong>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">C</div>
+
+                    <div>
+                        <span>Candidates</span>
+                        <strong id="candidateCount">0</strong>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">V</div>
+
+                    <div>
+                        <span>Total Votes</span>
+                        <strong id="voteCount">0</strong>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- RECENT ELECTIONS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <p class="eyebrow">ELECTIONS</p>
+                        <h3>Active Elections</h3>
+                    </div>
+
+                    <button class="text-btn" id="viewAllBtn">
+                        View all
+                    </button>
+
+                </div>
+
+                <div id="dashboardElections" class="election-list">
+
+                    <div class="loading">
+                        Loading elections...
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ELECTIONS SECTION
+        ================================================== -->
+
+        <section id="electionsSection" class="section">
+
+            <div class="section-heading">
+
+                <div>
+                    <p class="eyebrow">MANAGEMENT</p>
+                    <h2>Elections</h2>
+                    <p>Create and manage your active elections.</p>
+                </div>
+
+                <button class="primary-btn" id="createElectionBtn2">
+                    + Create Election
+                </button>
+
+            </div>
+
+
+            <div id="electionsList" class="elections-grid">
+
+                <div class="loading">
+                    Loading elections...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             RESULTS SECTION
+        ================================================== -->
+
+        <section id="resultsSection" class="section">
+
+            <div class="section-heading">
+
+                <div>
+                    <p class="eyebrow">LIVE VOTING</p>
+                    <h2>Results</h2>
+                    <p>Select an election to view its current results.</p>
+                </div>
+
+            </div>
+
+            <div id="resultsElectionList" class="elections-grid">
+
+                <div class="loading">
+                    Loading elections...
+                </div>
+
+            </div>
+
+            <div id="resultsContainer" class="results-container hidden">
+
+                <div class="results-heading">
+
+                    <button id="backToResultsBtn" class="back-btn">
+                        ← Back
+                    </button>
+
+                    <div>
+                        <p class="eyebrow">LIVE RESULTS</p>
+                        <h2 id="resultsTitle"></h2>
+                    </div>
+
+                </div>
+
+                <div id="resultsContent"></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         CREATE ELECTION MODAL
+    ====================================================== -->
+
+    <div id="electionModal" class="modal hidden">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <p class="eyebrow">NEW ELECTION</p>
+                    <h2>Create Election</h2>
+                </div>
+
+                <button class="close-btn" data-close="electionModal">
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="electionForm">
+
+                <div class="form-group">
+
+                    <label for="electionTitle">
+                        Election title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="electionTitle"
+                        placeholder="e.g. GCTU SRC Elections 2026"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="electionDescription">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="electionDescription"
+                        placeholder="Describe this election..."
+                        rows="4"
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="startDate">
+                            Start date
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="startDate"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="endDate">
+                            End date
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="endDate"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div id="electionFormMsg" class="form-message"></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        data-close="electionModal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                        id="saveElectionBtn"
+                    >
+                        Create Election
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MANAGE ELECTION MODAL
+    ====================================================== -->
+
+    <div id="manageModal" class="modal hidden">
+
+        <div class="modal-box large">
+
+            <div class="modal-header">
+
+                <div>
+                    <p class="eyebrow">MANAGE ELECTION</p>
+                    <h2 id="manageTitle">Election</h2>
+                </div>
+
+                <button class="close-btn" data-close="manageModal">
+                    ×
+                </button>
+
+            </div>
+
+
+            <div id="manageContent">
+
+                <div class="loading">
+                    Loading election...
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ADD POSITION MODAL
+    ====================================================== -->
+
+    <div id="positionModal" class="modal hidden">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <p class="eyebrow">ELECTION SETUP</p>
+                    <h2>Add Position</h2>
+                </div>
+
+                <button class="close-btn" data-close="positionModal">
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="positionForm">
+
+                <div class="form-group">
+
+                    <label for="positionName">
+                        Position name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="positionName"
+                        placeholder="e.g. SRC President"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="positionOrder">
+                        Display order
+                    </label>
+
+                    <input
+                        type="number"
+                        id="positionOrder"
+                        value="0"
+                        min="0"
+                    >
+
+                </div>
+
+
+                <div id="positionFormMsg" class="form-message"></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        data-close="positionModal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                    >
+                        Add Position
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ADD CANDIDATE MODAL
+    ====================================================== -->
+
+    <div id="candidateModal" class="modal hidden">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <p class="eyebrow">ELECTION SETUP</p>
+                    <h2>Add Candidate</h2>
+                </div>
+
+                <button class="close-btn" data-close="candidateModal">
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="candidateForm">
+
+                <div class="form-group">
+
+                    <label for="candidateName">
+                        Candidate name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="candidateName"
+                        placeholder="Enter candidate name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="candidatePhoto">
+                        Photo URL
+                    </label>
+
+                    <input
+                        type="url"
+                        id="candidatePhoto"
+                        placeholder="https://..."
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="candidateBio">
+                        Biography
+                    </label>
+
+                    <textarea
+                        id="candidateBio"
+                        rows="4"
+                        placeholder="Short candidate biography..."
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="candidatePosition">
+                        Position
+                    </label>
+
+                    <select id="candidatePosition" required>
+                        <option value="">Select position</option>
+                    </select>
+
+                </div>
+
+
+                <div id="candidateFormMsg" class="form-message"></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        data-close="candidateModal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                    >
+                        Add Candidate
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script type="module" src="./js/admin.js"></script>
+
+</body>
+</html>

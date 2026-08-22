@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {Schema} = mongoose
 
-const registereduserschema = new Schema({
+const electionparaticipantschema = new Schema({
     id:Number,
     userName:String,
     password:String,
@@ -9,4 +9,4 @@ const registereduserschema = new Schema({
     refreshToken:String
 })
 
-module.exports = mongoose.model('registeredusers',registereduserschema)
+module.exports = mongoose.model('electionparticipants',electionparaticipantschema)

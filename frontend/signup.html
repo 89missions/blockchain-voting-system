@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create account — GCTU E-Voting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+<main class="auth">
+  <a class="auth-home" href="index.html">&larr; Back to home</a>
+  <div class="auth-card">
+    <img class="auth-logo" src="./assets/logo.jpeg" alt="GCTU logo" />
+    <h1>Create your account</h1>
+    <p class="auth-sub">Register to vote in GCTU student elections.</p>
+
+    <div class="auth-msg" id="msg"></div>
+
+    <form id="signupForm" novalidate>
+      <div class="field" id="f-id">
+        <label for="id">Student ID</label>
+        <input type="text" id="id" name="id" placeholder="e.g. 0123456789" autocomplete="off" />
+        <span class="err">Please enter your student ID.</span>
+      </div>
+      <div class="field" id="f-user">
+        <label for="userName">Fullname</label>
+        <input type="text" id="userName" name="userName" placeholder="Choose a username" autocomplete="username" />
+        <span class="err">Please choose a Fullname.</span>
+      </div>
+      <div class="field" id="f-pass">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="At least 6 characters" autocomplete="new-password" />
+        <span class="err">Password must be at least 6 characters.</span>
+      </div>
+      <div class="field" id="f-confirm">
+        <label for="confirm">Confirm password</label>
+        <input type="password" id="confirm" name="confirm" placeholder="Re-enter your password" autocomplete="new-password" />
+        <span class="err">Passwords do not match.</span>
+      </div>
+      <button class="btn gold full auth-btn" type="submit">Create account</button>
+    </form>
+
+    <p class="auth-alt">Already have an account? <a href="signin.html">Sign in</a></p>
+  </div>
+</main>
+
+<script src="./js/config.js" type="module"></script>
+<script src="./js/signup.js" type="module"></script>
+</body>
+</html>
