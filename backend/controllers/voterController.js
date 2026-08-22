@@ -50,9 +50,16 @@ const postVote = async (req, res) => {
         // Import ethers and blockchain contract
         const { ethers } = await import("ethers");
 
-        const { contractWithSigner } =
+        const { contract, contractWithSigner } =
             await import("../blockchain/services/electionservice.js");
 
+        const votingOpen = await contract.votingOpen();
+
+        if (!votingOpen) {
+            return res.status(400).json({
+            message: "voting is currently closed"
+            });
+}
         // --------------------------------
         // 1. Create voter hash
         // --------------------------------

@@ -13,7 +13,7 @@ app.use(express.json())
 app.use('/register',require('./routes/register'))
 app.use('/login',require('./routes/login'))
 
-app.use(verifyJWT)
+/*app.use(verifyJWT)*/
 
 app.use('/admin',require('./routes/admin'))
 app.use('/voter',require('./routes/voter'))
