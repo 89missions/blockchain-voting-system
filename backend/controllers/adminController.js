@@ -1,34 +1,80 @@
 const elections = require('../models/elections')
 const positions = require('../models/positions')
 const candidates = require('../models/candidates')
-const { contractWithSigner } = require("../blockchain/services/electionservice")
 const mongoose = require('mongoose')
 
 const createElection = async (req, res) => {
     try {
-        const { title, description, startDate, endDate } = req.body
-        
+        const { title, description, startDate, endDate } = req.body;
+
         if (!title || !startDate || !endDate) {
-            return res.status(400).json({ message: "Missing required fields" })
+            return res.status(400).json({
+                message: "Missing required fields"
+            });
         }
 
+        // Convert dates to Unix timestamps (seconds)
+        const startTime = Math.floor(
+            new Date(startDate).getTime() / 1000
+        );
+
+        const endTime = Math.floor(
+            new Date(endDate).getTime() / 1000
+        );
+
+        // Make sure the dates are valid
+        if (
+            Number.isNaN(startTime) ||
+            Number.isNaN(endTime)
+        ) {
+            return res.status(400).json({
+                message: "Invalid election dates"
+            });
+        }
+
+        // Make sure election starts before it ends
+        if (startTime >= endTime) {
+            return res.status(400).json({
+                message: "End date must be after start date"
+            });
+        }
+
+        // Deploy blockchain contract
+        const deployElectionContract =
+            (await import("../blockchain/services/deployElection.js"))
+                .default;
+
+        const contractAddress =
+            await deployElectionContract(
+                startTime,
+                endTime
+            );
+
+        // Save election + blockchain contract address
         const newElection = await elections.create({
             title,
             description,
             startDate,
             endDate,
-            createdBy: req.id
-        })
-        
-        res.status(201).json({
+            createdBy: req.id,
+            contractAddress
+        });
+
+        return res.status(201).json({
             message: "Election created",
-            electionId: newElection._id
-        })
+            electionId: newElection._id,
+            contractAddress
+        });
+
     } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Server error" })
+
+        console.error("Create election error:", error);
+
+        return res.status(500).json({
+            message: "Server error"
+        });
     }
-}
+};
 const addPosition = async (req, res) => {
     try {
         const { name, electionId, order } = req.body
@@ -121,40 +167,11 @@ const getElectionDetails = async (req, res) => {
     }
 }
 
-const startElection = async (req, res) => {
-    try {
-
-        const { contractWithSigner } =
-            await import("../blockchain/services/electionservice.js")
-
-        const transaction =
-            await contractWithSigner.startElection()
-
-        const receipt =
-            await transaction.wait()
-
-        res.status(200).json({
-            message: "Election started",
-            transactionHash: receipt.hash
-        })
-
-    } catch (error) {
-
-        console.error("Start election error:", error)
-
-        res.status(500).json({
-            message: error.reason ||
-                error.shortMessage ||
-                "Failed to start election"
-        })
-    }
-}
 
 module.exports = {
     createElection,
     addPosition,
     addCandidate,
     getElections,
-    getElectionDetails,
-    startElection
+    getElectionDetails
 }

@@ -39,10 +39,6 @@ const handleLogin = async (req, res) => {
             })
         }
 
-        // ==============================
-        // CREATE ACCESS TOKEN
-        // ==============================
-
         const accessToken = jwt.sign(
             {
                 userInfo: {
@@ -52,13 +48,9 @@ const handleLogin = async (req, res) => {
             },
             process.env.ACCESS_TOKEN_SECRET,
             {
-                expiresIn: "15m"
+                expiresIn: "60m"
             }
         )
-
-        // ==============================
-        // CREATE REFRESH TOKEN
-        // ==============================
 
         const refreshToken = jwt.sign(
             {
@@ -86,10 +78,6 @@ const handleLogin = async (req, res) => {
         foundUser.refreshToken = hashedRefreshToken
 
         await foundUser.save()
-
-        console.log("User logged in:", foundUser.id)
-        console.log("Access token generated")
-        console.log("Refresh token generated")
 
         // ==============================
         // SEND TOKENS IN RESPONSE

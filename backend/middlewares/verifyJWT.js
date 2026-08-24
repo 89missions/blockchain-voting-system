@@ -8,8 +8,6 @@ const handleVerification = (req,res,next)=>{
         return res.status(401).json({"message":"not authorized"})
     }
 
-    console.log('it goes into the jwtverify middleware')
-
     //extract the token from the authorization header
     const token = authHeader.split(' ')[1]
 

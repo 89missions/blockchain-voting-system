@@ -28,6 +28,20 @@ async function main() {
 
 
     // =========================
+    // GET ELECTION TIMES
+    // =========================
+
+    const startTime = process.argv[2];
+    const endTime = process.argv[3];
+
+    if (!startTime || !endTime) {
+        throw new Error(
+            "Usage: npx tsx scripts/deploy.ts <startTime> <endTime>"
+        );
+    }
+
+
+    // =========================
     // CONNECT TO BLOCKCHAIN
     // =========================
 
@@ -72,8 +86,13 @@ async function main() {
     );
 
     console.log("Deploying Election contract...");
+    console.log("Start time:", startTime);
+    console.log("End time:", endTime);
 
-    const contract = await factory.deploy();
+    const contract = await factory.deploy(
+        BigInt(startTime),
+        BigInt(endTime)
+    );
 
     await contract.waitForDeployment();
 
@@ -90,6 +109,8 @@ async function main() {
     console.log("Election contract deployed!");
     console.log("================================");
     console.log("Contract address:", contractAddress);
+    console.log("Start time:", startTime);
+    console.log("End time:", endTime);
     console.log("Deployer:", wallet.address);
     console.log("");
 }

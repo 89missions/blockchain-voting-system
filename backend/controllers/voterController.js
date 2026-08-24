@@ -5,234 +5,408 @@ const registeredusers = require('../models/electionparticipants.js')
 const mongoose = require('mongoose')
 const { ethers } = require('ethers')
 
-const getActiveElections = async(req,res)=>{
+
+const getActiveElections = async (req, res) => {
     try {
-      const activeElections = await elections.find({isActive:true}).select('title description startDate _id')
-      return res.json(activeElections)
+
+        const activeElections = await elections
+            .find({ isActive: true })
+            .select('title description startDate _id contractAddress')
+
+        return res.json(activeElections)
+
     } catch (error) {
+
         console.log(error)
-        return res.status(500).json({"message":"internal server error"})
+
+        return res.status(500).json({
+            message: "internal server error"
+        })
     }
 }
-const getCandidates = async(req,res)=>{
-  try {
-    const {electionId} = req.params
-    const allPositions = await positions.find({electionId:electionId})
-    const allPositionsArray = allPositions.map((position)=>{
-     return position._id
-    })
-    const allCandidates = await candidates.find({positionId:{$in : allPositionsArray}}).select('-voteCount')
-    return res.status(200).json({allPositions,allCandidates})
-  } catch (error) {
-    res.status(500).json({"message":"internal server error"})
-  }
+
+
+const getCandidates = async (req, res) => {
+    try {
+
+        const { electionId } = req.params
+
+        const allPositions = await positions.find({
+            electionId: electionId
+        })
+
+        const allPositionsArray = allPositions.map((position) => {
+            return position._id
+        })
+
+        const allCandidates = await candidates
+            .find({
+                positionId: {
+                    $in: allPositionsArray
+                }
+            })
+            .select('-voteCount')
+
+        return res.status(200).json({
+            allPositions,
+            allCandidates
+        })
+
+    } catch (error) {
+
+        console.error("Get candidates error:", error)
+
+        return res.status(500).json({
+            message: "internal server error"
+        })
+    }
 }
+
 
 const postVote = async (req, res) => {
     try {
-        const { electionId, positionId, votes } = req.body;
+        const { electionId, votes } = req.body;
 
-        // Find the voter
+        const election = await elections.findById(electionId);
+
+        if (!election) {
+            return res.status(404).json({
+                message: "Election not found"
+            });
+        }
+
+        if (!election.contractAddress) {
+            return res.status(500).json({
+                message: "Election has no blockchain contract"
+            });
+        }
+
         const voter = await registeredusers.findOne({
-    id: req.id
-});
+            id: req.id
+        });
 
         if (!voter) {
             return res.status(400).json({
-                message: "could not find user"
+                message: "Could not find user"
             });
         }
 
-        // Make sure votes were provided
         if (!Array.isArray(votes) || votes.length === 0) {
             return res.status(400).json({
-                message: "no votes provided"
+                message: "No votes provided"
             });
         }
 
-        // Import ethers and blockchain contract
-        const { ethers } = await import("ethers");
+        // Make sure every vote contains a position and candidate
+        for (const vote of votes) {
+            if (!vote.positionId || !vote.candidateId) {
+                return res.status(400).json({
+                    message: "Each vote must contain a position and candidate"
+                });
+            }
+        }
 
-        const { contract, contractWithSigner } =
-            await import("../blockchain/services/electionservice.js");
+        // Prevent selecting more than one candidate for the same position
+        const positionIds = votes.map(
+            vote => vote.positionId.toString()
+        );
+
+        if (new Set(positionIds).size !== positionIds.length) {
+            return res.status(400).json({
+                message: "Only one candidate can be selected per position"
+            });
+        }
+
+        const {
+            getElectionContract,
+            getElectionContractWithSigner
+        } = await import(
+            "../blockchain/services/electionservice.js"
+        );
+
+        // Get the contract belonging to THIS election
+        const contract = getElectionContract(
+            election.contractAddress
+        );
+
+        const contractWithSigner =
+            getElectionContractWithSigner(
+                election.contractAddress
+            );
 
         const votingOpen = await contract.votingOpen();
 
         if (!votingOpen) {
             return res.status(400).json({
-            message: "voting is currently closed"
-            });
-}
-        // --------------------------------
-        // 1. Create voter hash
-        // --------------------------------
-
-        const voterHash = ethers.keccak256(
-            ethers.toUtf8Bytes(voter.id.toString())
-        );
-
-        // --------------------------------
-        // 2. Get candidate MongoDB IDs
-        // --------------------------------
-
-        const candidateMongoIds = votes.map(
-            (vote) => vote.candidateId.toString()
-        );
-
-        // --------------------------------
-        // 3. Verify candidates and position belong
-        //    to this election
-        // --------------------------------
-
-        const validCandidates = await candidates.find({
-            candidateId: { $in: candidateMongoIds },
-            electionId: electionId,
-            positionId: positionId
-        });
-        
-        if (validCandidates.length !== candidateMongoIds.length) {
-            return res.status(400).json({
-                message: "one or more candidates do not belong to this election or position"
+                message: "Voting is currently closed"
             });
         }
 
-        // --------------------------------
-        // 4. Hash candidate IDs
-        // --------------------------------
+        // Hash voter ID
+        const voterHash = ethers.keccak256(
+            ethers.toUtf8Bytes(
+                voter.id.toString()
+            )
+        );
 
+        const candidateMongoIds = votes.map(
+            vote => vote.candidateId.toString()
+        );
+
+        // Prevent duplicate candidate IDs
+        if (
+            new Set(candidateMongoIds).size !==
+            candidateMongoIds.length
+        ) {
+            return res.status(400).json({
+                message: "Duplicate candidates are not allowed"
+            });
+        }
+
+        // Find all selected candidates
+        const validCandidates = await candidates.find({
+            candidateId: {
+                $in: candidateMongoIds
+            },
+            electionId: electionId
+        });
+
+        // Make sure every selected candidate exists
+        if (
+            validCandidates.length !==
+            candidateMongoIds.length
+        ) {
+            return res.status(400).json({
+                message:
+                    "One or more candidates do not belong to this election"
+            });
+        }
+
+        // Make sure each candidate belongs to the
+        // position the voter selected it for
+        for (const vote of votes) {
+            const candidate = validCandidates.find(
+                candidate =>
+                    candidate.candidateId.toString() ===
+                    vote.candidateId.toString()
+            );
+
+            if (!candidate) {
+                return res.status(400).json({
+                    message: "Invalid candidate selected"
+                });
+            }
+
+            if (
+                candidate.positionId.toString() !==
+                vote.positionId.toString()
+            ) {
+                return res.status(400).json({
+                    message:
+                        "Candidate does not belong to the selected position"
+                });
+            }
+        }
+
+        // Hash every candidate ID
         const candidateIds = candidateMongoIds.map(
-            (candidateId) =>
+            candidateId =>
                 ethers.keccak256(
                     ethers.toUtf8Bytes(candidateId)
                 )
         );
 
-        // --------------------------------
-        // 5. Send vote to blockchain
-        // --------------------------------
-
+        // ONE blockchain transaction for the entire ballot
         const tx = await contractWithSigner.vote(
             voterHash,
             candidateIds
         );
 
-        // Wait for confirmation
+        // Wait for blockchain confirmation
         await tx.wait();
 
         console.log("Vote recorded on blockchain");
         console.log("Transaction hash:", tx.hash);
 
-        // --------------------------------
-        // 6. Respond to voter
-        // --------------------------------
-
         return res.status(200).json({
-            message: "successfully voted",
+            message: "Successfully voted",
             transactionHash: tx.hash
         });
 
     } catch (error) {
-
         console.error("Voting error:", error);
 
         return res.status(500).json({
-            message: "internal server error"
+            message: "Internal server error"
         });
     }
 };
 
+
 const getLiveResults = async (req, res) => {
+
     try {
 
-        const { electionId } = req.params
+        const {
+            electionId
+        } = req.params
 
-        // 1. Fetch all positions belonging to this election
-        const allPositions = await positions.find({ electionId })
+        const election = await elections.findById(
+            electionId
+        )
 
-        if (!allPositions || allPositions.length === 0) {
+
+        if (!election) {
+
             return res.status(404).json({
-                message: "No positions found for this election."
+                message: "Election not found"
             })
         }
 
-        // 2. Fetch all candidates for this election
+
+        // Make sure the election has a blockchain contract
+
+        if (!election.contractAddress) {
+
+            return res.status(500).json({
+                message: "Election has no blockchain contract"
+            })
+        }
+
+        const allPositions = await positions.find({
+            electionId
+        })
+
+
+        if (
+            !allPositions ||
+            allPositions.length === 0
+        ) {
+
+            return res.status(404).json({
+                message:
+                    "No positions found for this election."
+            })
+        }
+
         const allCandidates = await candidates.find({
             electionId: electionId
         })
 
+        const {
+            getElectionContract
+        } = await import(
+            "../blockchain/services/electionservice.js"
+        )
 
-        // 3. Connect to the deployed Election contract
-        const { contract } =
-            await import("../blockchain/services/electionservice.js")
 
+        const contract = getElectionContract(
+            election.contractAddress
+        )
 
-        // 4. Calculate blockchain vote counts
         const candidateResults = []
 
+
         for (const candidate of allCandidates) {
-
-            // Hash the same candidateId used when voting
-            const candidateHash = ethers.keccak256(
-                ethers.toUtf8Bytes(
-                    candidate.candidateId.toString()
+            const candidateHash =
+                ethers.keccak256(
+                    ethers.toUtf8Bytes(
+                        candidate.candidateId.toString()
+                    )
                 )
-            )
 
-            // Get vote count from blockchain
-            const voteCount = await contract.getVoteCount(
-                candidateHash
-            )
+            // Get vote count from THIS election's contract
+
+            const voteCount =
+                await contract.getVoteCount(
+                    candidateHash
+                )
+
 
             candidateResults.push({
+
                 candidate,
-                voteCount: Number(voteCount)
+
+                voteCount: Number(
+                    voteCount
+                )
+
             })
         }
 
+        const stats = allPositions.map(
+            pos => {
 
-        // 5. Build results grouped by position
-        const stats = allPositions.map(pos => {
+                const posCandidates =
+                    candidateResults
 
-            const posCandidates = candidateResults
-                .filter(item =>
-                    item.candidate.positionId.toString() ===
-                    pos._id.toString()
-                )
-                .sort((a, b) =>
-                    b.voteCount - a.voteCount
-                )
+                        .filter(
+                            item =>
+                                item.candidate.positionId
+                                    .toString() ===
+                                pos._id.toString()
+                        )
 
-
-            // Calculate total votes for this position
-            const totalVotesForPosition = posCandidates.reduce(
-                (sum, item) => sum + item.voteCount,
-                0
-            )
+                        .sort(
+                            (a, b) =>
+                                b.voteCount -
+                                a.voteCount
+                        )
 
 
-            return {
-                positionName: pos.name,
-                positionId: pos._id,
-                totalVotes: totalVotesForPosition,
+                // Total votes for this position
 
-                candidates: posCandidates.map(item => ({
-                    ...item.candidate.toObject(),
-                    voteCount: item.voteCount
-                }))
+                const totalVotesForPosition =
+                    posCandidates.reduce(
+                        (sum, item) =>
+                            sum + item.voteCount,
+                        0
+                    )
+
+
+                return {
+
+                    positionName: pos.name,
+
+                    positionId: pos._id,
+
+                    totalVotes:
+                        totalVotesForPosition,
+
+                    candidates:
+                        posCandidates.map(
+                            item => ({
+
+                                ...item.candidate.toObject(),
+
+                                voteCount:
+                                    item.voteCount
+
+                            })
+                        )
+
+                }
             }
-        })
+        )
 
 
-        return res.status(200).json(stats)
-
+        return res.status(200).json(
+            stats
+        )
     } catch (error) {
-
-        console.error("Results error:", error)
-
+        console.error(
+            "Results error:",
+            error
+        )
         return res.status(500).json({
-            message: "Internal server error while fetching results"
+            message:
+                "Internal server error while fetching results"
         })
     }
 }
-
-module.exports = {getActiveElections,getCandidates,postVote,getLiveResults}
+module.exports = {
+    getActiveElections,
+    getCandidates,
+    postVote,
+    getLiveResults
+}

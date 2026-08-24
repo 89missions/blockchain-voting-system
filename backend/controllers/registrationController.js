@@ -1,5 +1,5 @@
-const registeredusers = require('../models/electionparticipants')
-const eligiblevoters = require('../models/students')
+const electionparticipants = require('../models/electionparticipants')
+const students = require('../models/students')
 const admins = require('../models/admins')
 const bcrypt = require('bcrypt')
 
@@ -17,7 +17,7 @@ const handleRegistration = async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUser = await registeredusers.findOne({
+        const existingUser = await electionparticipants.findOne({
             id: Number(id)
         })
 
@@ -39,7 +39,7 @@ const handleRegistration = async (req, res) => {
         if (isAdmin) {
             const hashedPassword = await bcrypt.hash(password, 10)
 
-            await registeredusers.create({
+            await electionparticipants.create({
                 id: Number(id),
                 userName: userName,
                 role: roles[0],
@@ -51,15 +51,8 @@ const handleRegistration = async (req, res) => {
                 role: "admin"
             })
         }
-
-        // Show the database being used
-        console.log("Database:", eligiblevoters.db.name)
-
-        // Show the collection being used
-        console.log("Collection:", eligiblevoters.collection.name)
-
         // Get all eligible voters
-        const allVoters = await eligiblevoters.find({}).lean()
+        const allVoters = await students.find({}).lean()
 
         console.log("Total eligible voters:", allVoters.length)
 
@@ -71,11 +64,8 @@ const handleRegistration = async (req, res) => {
         // Convert ID to Number
         const voterId = Number(id)
 
-        console.log("Searching for voter ID:", voterId)
-        console.log("Searching ID type:", typeof voterId)
-
         // Find voter
-        const eligibleVoter = await eligiblevoters.findOne({
+        const eligibleVoter = await students.findOne({
             id: voterId
         }).lean()
 
@@ -84,7 +74,6 @@ const handleRegistration = async (req, res) => {
 
         // Voter is not eligible
         if (!eligibleVoter) {
-            console.log("❌ VOTER NOT FOUND")
             console.log("ID searched:", voterId)
 
             return res.status(403).json({
@@ -92,24 +81,14 @@ const handleRegistration = async (req, res) => {
             })
         }
 
-        console.log("✅ ELIGIBLE VOTER FOUND")
-        console.log(eligibleVoter)
-
-        // ==========================================
-        // REGISTER VOTER
-        // ==========================================
-
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        const newUser = await registeredusers.create({
+        const newUser = await electionparticipants.create({
             id: voterId,
             userName: userName,
             role: roles[1],
             password: hashedPassword
         })
-
-        console.log("✅ VOTER REGISTERED")
-        console.log(newUser)
 
         return res.status(201).json({
             message: "Voter registered successfully",
@@ -117,11 +96,7 @@ const handleRegistration = async (req, res) => {
         })
 
     } catch (error) {
-        console.log("=================================")
-        console.log("❌ REGISTRATION ERROR")
         console.log(error)
-        console.log("=================================")
-
         return res.status(500).json({
             message: "Server error"
         })

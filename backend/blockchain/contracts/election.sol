@@ -9,7 +9,8 @@ contract Election {
 
     address public admin;
 
-    bool public votingOpen;
+    uint256 public startTime;
+    uint256 public endTime;
 
     // voterHash => whether the voter has already voted
     mapping(bytes32 => bool) private voted;
@@ -22,10 +23,6 @@ contract Election {
     // EVENTS
     // =========================
 
-    event ElectionStarted();
-
-    event ElectionEnded();
-
     event VoteCast(
         bytes32 indexed voterHash,
         bytes32 indexed candidateId
@@ -36,9 +33,19 @@ contract Election {
     // CONSTRUCTOR
     // =========================
 
-    constructor() {
+    constructor(
+        uint256 _startTime,
+        uint256 _endTime
+    ) {
+        require(
+            _startTime < _endTime,
+            "Invalid election time"
+        );
+
         admin = msg.sender;
-        votingOpen = false;
+
+        startTime = _startTime;
+        endTime = _endTime;
     }
 
 
@@ -53,24 +60,15 @@ contract Election {
 
 
     // =========================
-    // ADMIN FUNCTIONS
+    // ELECTION STATUS
     // =========================
 
-    function startElection() external onlyAdmin {
-        require(!votingOpen, "Election already open");
+    function votingOpen() public view returns (bool) {
 
-        votingOpen = true;
-
-        emit ElectionStarted();
-    }
-
-
-    function endElection() external onlyAdmin {
-        require(votingOpen, "Election is not open");
-
-        votingOpen = false;
-
-        emit ElectionEnded();
+        return (
+            block.timestamp >= startTime &&
+            block.timestamp <= endTime
+        );
     }
 
 
@@ -83,15 +81,28 @@ contract Election {
         bytes32[] calldata candidateIds
     ) external {
 
-        require(votingOpen, "Voting is closed");
+        require(
+            votingOpen(),
+            "Voting is closed"
+        );
 
-        require(!voted[voterHash], "Already voted");
+        require(
+            !voted[voterHash],
+            "Already voted"
+        );
 
-        require(candidateIds.length > 0, "No candidates selected");
+        require(
+            candidateIds.length > 0,
+            "No candidates selected"
+        );
 
 
         // Increase vote count for every selected candidate
-        for (uint256 i = 0; i < candidateIds.length; i++) {
+        for (
+            uint256 i = 0;
+            i < candidateIds.length;
+            i++
+        ) {
 
             voteCounts[candidateIds[i]]++;
 
