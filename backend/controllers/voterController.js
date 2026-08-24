@@ -65,56 +65,51 @@ const getCandidates = async (req, res) => {
 
 const postVote = async (req, res) => {
     try {
-        const { electionId, votes } = req.body;
+        const { electionId, votes } = req.body
 
-        const election = await elections.findById(electionId);
+        // Find election
+        const election = await elections.findById(electionId)
 
         if (!election) {
             return res.status(404).json({
                 message: "Election not found"
-            });
+            })
         }
 
+        // Make sure this election has a blockchain contract
         if (!election.contractAddress) {
             return res.status(500).json({
                 message: "Election has no blockchain contract"
-            });
+            })
         }
 
+        // Find voter
         const voter = await registeredusers.findOne({
             id: req.id
-        });
+        })
 
         if (!voter) {
             return res.status(400).json({
                 message: "Could not find user"
-            });
+            })
         }
 
+        // Validate votes
         if (!Array.isArray(votes) || votes.length === 0) {
             return res.status(400).json({
                 message: "No votes provided"
-            });
+            })
         }
 
-        // Make sure every vote contains a position and candidate
-        for (const vote of votes) {
-            if (!vote.positionId || !vote.candidateId) {
-                return res.status(400).json({
-                    message: "Each vote must contain a position and candidate"
-                });
-            }
-        }
+        // Make sure every vote contains positionId and candidateId
+        const invalidVote = votes.some(
+            vote => !vote.positionId || !vote.candidateId
+        )
 
-        // Prevent selecting more than one candidate for the same position
-        const positionIds = votes.map(
-            vote => vote.positionId.toString()
-        );
-
-        if (new Set(positionIds).size !== positionIds.length) {
+        if (invalidVote) {
             return res.status(400).json({
-                message: "Only one candidate can be selected per position"
-            });
+                message: "Each vote must contain a position and candidate"
+            })
         }
 
         const {
@@ -122,126 +117,125 @@ const postVote = async (req, res) => {
             getElectionContractWithSigner
         } = await import(
             "../blockchain/services/electionservice.js"
-        );
+        )
 
         // Get the contract belonging to THIS election
         const contract = getElectionContract(
             election.contractAddress
-        );
+        )
 
         const contractWithSigner =
             getElectionContractWithSigner(
                 election.contractAddress
-            );
+            )
 
-        const votingOpen = await contract.votingOpen();
+        // Check whether blockchain election is open
+        const votingOpen = await contract.votingOpen()
 
         if (!votingOpen) {
             return res.status(400).json({
                 message: "Voting is currently closed"
-            });
+            })
         }
 
-        // Hash voter ID
+        // Create voter hash
         const voterHash = ethers.keccak256(
             ethers.toUtf8Bytes(
                 voter.id.toString()
             )
-        );
+        )
 
-        const candidateMongoIds = votes.map(
-            vote => vote.candidateId.toString()
-        );
-
-        // Prevent duplicate candidate IDs
-        if (
-            new Set(candidateMongoIds).size !==
-            candidateMongoIds.length
-        ) {
-            return res.status(400).json({
-                message: "Duplicate candidates are not allowed"
-            });
-        }
-
-        // Find all selected candidates
-        const validCandidates = await candidates.find({
-            candidateId: {
-                $in: candidateMongoIds
-            },
-            electionId: electionId
-        });
-
-        // Make sure every selected candidate exists
-        if (
-            validCandidates.length !==
-            candidateMongoIds.length
-        ) {
-            return res.status(400).json({
-                message:
-                    "One or more candidates do not belong to this election"
-            });
-        }
-
-        // Make sure each candidate belongs to the
-        // position the voter selected it for
+        // Validate every selected candidate
         for (const vote of votes) {
-            const candidate = validCandidates.find(
-                candidate =>
-                    candidate.candidateId.toString() ===
-                    vote.candidateId.toString()
-            );
+            const validCandidate = await candidates.findOne({
+                candidateId: vote.candidateId,
+                electionId: electionId,
+                positionId: vote.positionId
+            })
 
-            if (!candidate) {
-                return res.status(400).json({
-                    message: "Invalid candidate selected"
-                });
-            }
-
-            if (
-                candidate.positionId.toString() !==
-                vote.positionId.toString()
-            ) {
+            if (!validCandidate) {
                 return res.status(400).json({
                     message:
-                        "Candidate does not belong to the selected position"
-                });
+                        "One or more selected candidates do not belong to this election or position"
+                })
             }
         }
 
-        // Hash every candidate ID
+        // Get candidate IDs
+        const candidateMongoIds = votes.map(
+            vote => vote.candidateId.toString()
+        )
+
+        // Hash candidate IDs for blockchain
         const candidateIds = candidateMongoIds.map(
             candidateId =>
                 ethers.keccak256(
                     ethers.toUtf8Bytes(candidateId)
                 )
-        );
+        )
 
-        // ONE blockchain transaction for the entire ballot
+        // Submit ONE blockchain transaction
         const tx = await contractWithSigner.vote(
             voterHash,
             candidateIds
-        );
+        )
 
         // Wait for blockchain confirmation
-        await tx.wait();
+        await tx.wait()
 
-        console.log("Vote recorded on blockchain");
-        console.log("Transaction hash:", tx.hash);
+        console.log("Vote recorded on blockchain")
+        console.log("Transaction hash:", tx.hash)
 
         return res.status(200).json({
             message: "Successfully voted",
             transactionHash: tx.hash
-        });
+        })
 
     } catch (error) {
-        console.error("Voting error:", error);
+        console.error("Voting error:", error)
+
+        if (
+            error.reason === "Already voted" ||
+            error.shortMessage?.includes("Already voted")
+        ) {
+            return res.status(409).json({
+                message: "You have already voted in this election"
+            })
+        }
+
+        if (
+            error.reason === "Voting is closed" ||
+            error.shortMessage?.includes("Voting is closed")
+        ) {
+            return res.status(400).json({
+                message: "Voting is currently closed"
+            })
+        }
+
+        if (
+            error.reason === "No candidates selected" ||
+            error.shortMessage?.includes("No candidates selected")
+        ) {
+            return res.status(400).json({
+                message: "No candidates were selected"
+            })
+        }
+
+        if (
+            error.code === "NETWORK_ERROR" ||
+            error.code === "SERVER_ERROR"
+        ) {
+            return res.status(503).json({
+                message: "Blockchain service is currently unavailable"
+            })
+        }
 
         return res.status(500).json({
-            message: "Internal server error"
-        });
+            message:
+                "An unexpected error occurred while recording your vote"
+        })
     }
-};
-
+}
 
 const getLiveResults = async (req, res) => {
 

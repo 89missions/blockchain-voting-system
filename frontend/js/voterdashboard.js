@@ -221,7 +221,7 @@ async function loadCandidates(id) {
         if (alreadyVoted) {
             html +=
                 '<div class="voted-note">' +
-                '&#10003; You have already voted in this election (recorded on this device).' +
+                '&#10003; You have already voted in this election' +
                 '</div>';
         }
 
